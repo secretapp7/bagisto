@@ -1,39 +1,43 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @return void
      */
-    public function up(): void
+    public function up()
     {
-        if (Schema::hasColumn('locales', 'locale_image')) {
-            Schema::dropColumns('locales', 'locale_image');
+        // Add the 'logo_path' column first
+        if (!Schema::hasColumn('locales', 'logo_path')) {
+            Schema::table('locales', function ($table) {
+                $table->string('logo_path')->nullable();
+            });
         }
 
-        Schema::table('locales', function (Blueprint $table) {
-            $table->string('logo_path')->after('direction')->nullable();
-        });
-
-        DB::table('locales')->whereNull('logo_path')->update(['logo_path'=> DB::raw('CONCAT("locales/", code, ".png")')]);
+        // Update the 'logo_path' column
+        DB::table('locales')->whereNull('logo_path')->update([
+            'logo_path' => DB::raw('"locales/" || code || ".png"'),
+        ]);
     }
 
     /**
      * Reverse the migrations.
+     *
+     * @return void
      */
-    public function down(): void
+    public function down()
     {
-        if (Schema::hasColumn('locales', 'locale_image')) {
-            Schema::dropColumns('locales', 'locale_image');
-        }
-
+        // Drop the 'logo_path' column
         if (Schema::hasColumn('locales', 'logo_path')) {
-            Schema::dropColumns('locales', 'logo_path');
+            Schema::table('locales', function ($table) {
+                $table->dropColumn('logo_path');
+            });
         }
     }
 };
